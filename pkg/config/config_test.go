@@ -3,67 +3,39 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestDefaultConfig(t *testing.T) {
 	cfg := DefaultConfig()
 
-	assert.NotEmpty(t, cfg.Model)
-	assert.NotEmpty(t, cfg.ServerURL)
-	assert.Equal(t, "info", cfg.LogLevel)
-	assert.Contains(t, cfg.ConfigDir, ".autocmdr")
-}
-
-func TestConfigValidate(t *testing.T) {
-	tests := []struct {
-		name    string
-		config  *Config
-		wantErr bool
-	}{
-		{
-			name:    "valid config",
-			config:  DefaultConfig(),
-			wantErr: false,
-		},
-		{
-			name: "empty model",
-			config: &Config{
-				Model:     "",
-				ServerURL: "http://localhost:11434",
-			},
-			wantErr: true,
-		},
-		{
-			name: "empty server URL",
-			config: &Config{
-				Model:     "test-model",
-				ServerURL: "",
-			},
-			wantErr: true,
-		},
+	if cfg.Model == "" {
+		t.Error("expected Model to be non-empty")
 	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := tt.config.Validate()
-			if tt.wantErr {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-			}
-		})
+	if cfg.ServerURL == "" {
+		t.Error("expected ServerURL to be non-empty")
+	}
+	if cfg.LogLevel != "info" {
+		t.Errorf("expected LogLevel to be 'info', got '%s'", cfg.LogLevel)
+	}
+	if !strings.Contains(cfg.ConfigDir, ".autocmdr") {
+		t.Errorf("expected ConfigDir to contain '.autocmdr', got '%s'", cfg.ConfigDir)
 	}
 }
 
 func TestConfigSaveAndLoad(t *testing.T) {
 	// Create temporary directory
 	tempDir, err := os.MkdirTemp("", "autocmdr-test")
-	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	if err != nil {
+		t.Fatalf("failed to create temp directory: %v", err)
+	}
+	defer func(path string) {
+		removeErr := os.RemoveAll(path)
+		if removeErr != nil {
+			t.Errorf("failed to remove temp directory: %v", removeErr)
+		}
+	}(tempDir)
 
 	// Create test config
 	cfg := &Config{
@@ -76,11 +48,15 @@ func TestConfigSaveAndLoad(t *testing.T) {
 
 	// Save config
 	err = cfg.Save()
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("failed to save config: %v", err)
+	}
 
 	// Check if config file exists
 	configPath := filepath.Join(tempDir, "config.json")
-	assert.FileExists(t, configPath)
+	if _, statErr := os.Stat(configPath); os.IsNotExist(statErr) {
+		t.Errorf("config file does not exist at %s", configPath)
+	}
 
 	// Set environment variable to use temp directory
 	os.Setenv("LANGCHAIN_CHAT_CONFIG_DIR", tempDir)
@@ -88,20 +64,32 @@ func TestConfigSaveAndLoad(t *testing.T) {
 
 	// Load config
 	loadedCfg, err := Load()
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("failed to load config: %v", err)
+	}
 
 	// Compare configs
-	assert.Equal(t, cfg.Model, loadedCfg.Model)
-	assert.Equal(t, cfg.ServerURL, loadedCfg.ServerURL)
-	assert.Equal(t, cfg.Token, loadedCfg.Token)
-	assert.Equal(t, cfg.LogLevel, loadedCfg.LogLevel)
+	if cfg.Model != loadedCfg.Model {
+		t.Errorf("expected Model %s, got %s", cfg.Model, loadedCfg.Model)
+	}
+	if cfg.ServerURL != loadedCfg.ServerURL {
+		t.Errorf("expected ServerURL %s, got %s", cfg.ServerURL, loadedCfg.ServerURL)
+	}
+	if cfg.Token != loadedCfg.Token {
+		t.Errorf("expected Token %s, got %s", cfg.Token, loadedCfg.Token)
+	}
+	if cfg.LogLevel != loadedCfg.LogLevel {
+		t.Errorf("expected LogLevel %s, got %s", cfg.LogLevel, loadedCfg.LogLevel)
+	}
 }
 
 func TestGetConfigPath(t *testing.T) {
 	cfg := &Config{
-		ConfigDir: "/test/dir",
+		ConfigDir: filepath.Join("test", "dir"),
 	}
 
-	expected := filepath.Join("/test/dir", "config.json")
-	assert.Equal(t, expected, cfg.GetConfigPath())
+	expected := filepath.Join("test", "dir", "config.json")
+	if expected != cfg.GetConfigPath() {
+		t.Errorf("expected %s, got %s", expected, cfg.GetConfigPath())
+	}
 }

@@ -17,133 +17,183 @@ import (
 	"github.com/tmc/langchaingo/memory"
 )
 
-func main() {
-	// Parse command line flags
-	var (
-		initFlag    = flag.Bool("init", false, "Initialize configuration")
-		viewFlag    = flag.Bool("view", false, "View current configuration")
-		promptFlag  = flag.Bool("prompt", false, "View system prompt")
-		versionFlag = flag.Bool("version", false, "Show version information")
-		modelFlag   = flag.String("m", "", "Model name")
-		serverFlag  = flag.String("u", "", "Server URL")
-		tokenFlag   = flag.String("t", "", "API token")
-		logLevel    = flag.String("log-level", "", "Log level (debug, info, warn, error)")
-	)
-	flag.Parse()
+type App struct {
+	logger *logrus.Logger
+	cfg    *config.Config
+}
 
-	// Show version information
-	if *versionFlag {
-		versionInfo := version.Get()
-		fmt.Println(versionInfo.String())
+func NewApp() *App {
+	return &App{}
+}
+
+type Args struct {
+	Init     bool
+	View     bool
+	Prompt   bool
+	Version  bool
+	Model    string
+	Server   string
+	Token    string
+	LogLevel string
+}
+
+func (a *App) ParseArgs() *Args {
+	var args Args
+	flag.BoolVar(&args.Init, "init", false, "Initialize configuration")
+	flag.BoolVar(&args.View, "view", false, "View current configuration")
+	flag.BoolVar(&args.Prompt, "prompt", false, "View system prompt")
+	flag.BoolVar(&args.Version, "version", false, "Show version information")
+	flag.StringVar(&args.Model, "m", "", "Model name")
+	flag.StringVar(&args.Server, "u", "", "Server URL")
+	flag.StringVar(&args.Token, "t", "", "API token")
+	flag.StringVar(&args.LogLevel, "log-level", "", "Log level (debug, info, warn, error)")
+	flag.Parse()
+	return &args
+}
+
+func (a *App) parseFlags() bool {
+
+	args := a.ParseArgs()
+
+	return a.handleFlags(args)
+}
+
+func (a *App) handleFlags(args *Args) (continueChat bool) {
+	continueChat = false
+	if args.Version {
+		a.showVersion()
 		return
 	}
 
-	// Load configuration
-	cfg, err := config.Load()
+	var err error
+	a.cfg, err = config.Load()
 	if err != nil {
 		fmt.Printf("Failed to load configuration: %v\n", err)
 		os.Exit(1)
 	}
 
-	// Override config with command line flags
-	if *logLevel != "" {
-		cfg.LogLevel = *logLevel
+	if args.LogLevel != "" {
+		a.cfg.LogLevel = args.LogLevel
 	}
 
-	// Setup logger
-	logger := setupLogger(cfg.LogLevel)
+	a.logger = setupLogger(a.cfg.LogLevel)
 
-	// Handle init command
-	if *initFlag {
-		if *modelFlag != "" {
-			cfg.Model = *modelFlag
-		}
-		if *serverFlag != "" {
-			cfg.ServerURL = *serverFlag
-		}
-		if *tokenFlag != "" {
-			cfg.Token = *tokenFlag
-		}
-
-		if err := cfg.Save(); err != nil {
-			logger.WithError(err).Fatal("Failed to save configuration")
-		}
-		fmt.Println("Configuration initialized successfully.")
+	if args.Init {
+		a.handleInit(args.Model, args.Server, args.Token)
 		return
 	}
 
-	// Handle view command
-	if *viewFlag {
-		fmt.Printf("Configuration:\n")
-		fmt.Printf("  Model: %s\n", cfg.Model)
-		fmt.Printf("  Server URL: %s\n", cfg.ServerURL)
-		fmt.Printf("  Token: %s\n", maskToken(cfg.Token))
-		fmt.Printf("  Log Level: %s\n", cfg.LogLevel)
-		fmt.Printf("  Config Directory: %s\n", cfg.ConfigDir)
+	if args.View {
+		a.showConfig()
 		return
 	}
 
-	// Handle prompt command
-	if *promptFlag {
-		loader := prompts.NewLoader()
-		systemPrompt := loader.LoadSystemPrompt()
-		fmt.Println(systemPrompt)
+	if args.Prompt {
+		a.showPrompt()
 		return
 	}
 
-	// Validate configuration
-	if err := cfg.Validate(); err != nil {
-		logger.WithError(err).Fatal("Invalid configuration")
+	if err = a.cfg.Validate(); err != nil {
+		a.logger.WithError(err).Fatal("Invalid configuration")
+	}
+	continueChat = true
+	return
+}
+
+func (a *App) showVersion() {
+	versionInfo := version.Get()
+	fmt.Println(versionInfo.String())
+}
+
+func (a *App) handleInit(model, server, token string) {
+	if model != "" {
+		a.cfg.Model = model
+	}
+	if server != "" {
+		a.cfg.ServerURL = server
+	}
+	if token != "" {
+		a.cfg.Token = token
 	}
 
-	// Setup context with cancellation
+	if err := a.cfg.Save(); err != nil {
+		a.logger.WithError(err).Fatal("Failed to save configuration")
+	}
+	fmt.Println("Configuration initialized successfully.")
+}
+
+func (a *App) showConfig() {
+	fmt.Printf("Configuration:\n")
+	fmt.Printf("  Model: %s\n", a.cfg.Model)
+	fmt.Printf("  Server URL: %s\n", a.cfg.ServerURL)
+	fmt.Printf("  Token: %s\n", maskToken(a.cfg.Token))
+	fmt.Printf("  Log Level: %s\n", a.cfg.LogLevel)
+	fmt.Printf("  Config Directory: %s\n", a.cfg.ConfigDir)
+}
+
+func (a *App) showPrompt() {
+	loader := prompts.NewLoader()
+	systemPrompt := loader.LoadSystemPrompt()
+	fmt.Println(systemPrompt)
+}
+
+func (a *App) runChatSession() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// Handle graceful shutdown
+	a.setupShutdownHandler(cancel)
+
+	llm := a.initLLM()
+	chatMemory := memory.NewConversationWindowBuffer(10)
+	assistant := chat.NewCliAssistant(chat.DefaultChatOptions(), a.logger)
+
+	a.logger.Info("Starting chat session")
+	if err := assistant.Run(ctx, llm, chatMemory); err != nil {
+		a.logger.WithError(err).Fatal("Chat session failed")
+	}
+	a.logger.Info("Chat session ended")
+}
+
+func (a *App) setupShutdownHandler(cancel context.CancelFunc) {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		<-sigChan
-		logger.Info("Received shutdown signal")
+		a.logger.Info("Received shutdown signal")
 		cancel()
 	}()
+}
 
-	// Initialize LLM
+func (a *App) initLLM() *ollama.LLM {
 	options := []ollama.Option{
-		ollama.WithServerURL(cfg.ServerURL),
-		ollama.WithModel(cfg.Model),
+		ollama.WithServerURL(a.cfg.ServerURL),
+		ollama.WithModel(a.cfg.Model),
 	}
 
-	if cfg.Token != "" {
-		// Add token if provided (this might need adjustment based on ollama client)
-		logger.Debug("Using authentication token")
+	if a.cfg.Token != "" {
+		a.logger.Debug("Using authentication token")
 	}
 
 	llm, err := ollama.New(options...)
 	if err != nil {
-		logger.WithError(err).Fatal("Failed to initialize LLM")
+		a.logger.WithError(err).Fatal("Failed to initialize LLM")
 	}
 
-	logger.WithFields(logrus.Fields{
-		"model":      cfg.Model,
-		"server_url": cfg.ServerURL,
+	a.logger.WithFields(logrus.Fields{
+		"model":      a.cfg.Model,
+		"server_url": a.cfg.ServerURL,
 	}).Info("LLM initialized successfully")
 
-	// Create chat memory
-	chatMemory := memory.NewConversationWindowBuffer(10)
+	return llm
+}
 
-	// Create chat assistant
-	chatOptions := chat.DefaultChatOptions()
-	assistant := chat.NewCliAssistant(chatOptions, logger)
-
-	// Start chat session
-	logger.Info("Starting chat session")
-	if err := assistant.Run(ctx, llm, chatMemory); err != nil {
-		logger.WithError(err).Fatal("Chat session failed")
+func main() {
+	app := NewApp()
+	continueChat := app.parseFlags()
+	if !continueChat {
+		return
 	}
-
-	logger.Info("Chat session ended")
+	app.runChatSession()
 }
 
 // setupLogger configures the logger based on the log level

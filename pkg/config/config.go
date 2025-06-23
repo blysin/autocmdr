@@ -1,3 +1,5 @@
+// Package config provides functionality for loading, saving, and validating application configuration.
+// It uses viper for configuration management and supports both file-based and environment variable configuration.
 package config
 
 import (
@@ -72,7 +74,7 @@ func Load() (*Config, error) {
 	}
 
 	// Ensure config directory exists
-	if err := os.MkdirAll(cfg.ConfigDir, 0755); err != nil {
+	if err := os.MkdirAll(cfg.ConfigDir, 0750); err != nil {
 		return nil, fmt.Errorf("failed to create config directory: %w", err)
 	}
 
@@ -84,7 +86,7 @@ func (c *Config) Save() error {
 	configPath := filepath.Join(c.ConfigDir, "config.json")
 
 	// Ensure config directory exists
-	if err := os.MkdirAll(c.ConfigDir, 0755); err != nil {
+	if err := os.MkdirAll(c.ConfigDir, 0750); err != nil {
 		return fmt.Errorf("failed to create config directory: %w", err)
 	}
 

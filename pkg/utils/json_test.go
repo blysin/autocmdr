@@ -1,10 +1,8 @@
 package utils
 
 import (
+	"reflect"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestExtractFirstJSON(t *testing.T) {
@@ -54,11 +52,19 @@ func TestExtractFirstJSON(t *testing.T) {
 			result, err := ExtractFirstJSON(tt.input)
 
 			if tt.wantErr {
-				assert.Error(t, err)
-				assert.Empty(t, result)
+				if err == nil {
+					t.Error("expected error but got none")
+				}
+				if result != "" {
+					t.Errorf("expected empty result but got %q", result)
+				}
 			} else {
-				require.NoError(t, err)
-				assert.Equal(t, tt.expected, result)
+				if err != nil {
+					t.Errorf("unexpected error: %v", err)
+				}
+				if result != tt.expected {
+					t.Errorf("expected %q but got %q", tt.expected, result)
+				}
 			}
 		})
 	}
@@ -93,10 +99,16 @@ func TestPrettyPrintJSON(t *testing.T) {
 			result, err := PrettyPrintJSON(tt.input)
 
 			if tt.wantErr {
-				assert.Error(t, err)
+				if err == nil {
+					t.Error("expected error but got none")
+				}
 			} else {
-				require.NoError(t, err)
-				assert.Equal(t, tt.expected, result)
+				if err != nil {
+					t.Errorf("unexpected error: %v", err)
+				}
+				if result != tt.expected {
+					t.Errorf("expected %q but got %q", tt.expected, result)
+				}
 			}
 		})
 	}
@@ -135,9 +147,13 @@ func TestValidateJSON(t *testing.T) {
 			err := ValidateJSON(tt.input)
 
 			if tt.wantErr {
-				assert.Error(t, err)
+				if err == nil {
+					t.Error("expected error but got none")
+				}
 			} else {
-				assert.NoError(t, err)
+				if err != nil {
+					t.Errorf("unexpected error: %v", err)
+				}
 			}
 		})
 	}
@@ -171,11 +187,19 @@ func TestParseJSONToMap(t *testing.T) {
 			result, err := ParseJSONToMap(tt.input)
 
 			if tt.wantErr {
-				assert.Error(t, err)
-				assert.Nil(t, result)
+				if err == nil {
+					t.Error("expected error but got none")
+				}
+				if result != nil {
+					t.Error("expected nil result but got non-nil")
+				}
 			} else {
-				require.NoError(t, err)
-				assert.Equal(t, tt.expected, result)
+				if err != nil {
+					t.Errorf("unexpected error: %v", err)
+				}
+				if !reflect.DeepEqual(result, tt.expected) {
+					t.Errorf("expected %v but got %v", tt.expected, result)
+				}
 			}
 		})
 	}

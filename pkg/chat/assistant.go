@@ -159,7 +159,11 @@ func (c *CliAssistant) handleUserInput(chatMemory schema.Memory, ctx context.Con
 	if err != nil {
 		c.logger.WithError(err).Fatal("Failed to create readline")
 	}
-	defer rl.Close()
+	defer func() {
+		if err := rl.Close(); err != nil {
+			c.logger.WithError(err).Error("Failed to close readline")
+		}
+	}()
 
 	line, err := rl.Readline()
 	if err != nil {
