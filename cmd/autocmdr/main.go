@@ -1,3 +1,4 @@
+// Copyright © 2021 Blysin <blysin@163.com>
 package main
 
 import (
@@ -8,24 +9,28 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/sirupsen/logrus"
+	"github.com/tmc/langchaingo/llms/ollama"
+	"github.com/tmc/langchaingo/memory"
+
 	"github.com/blysin/autocmdr/pkg/chat"
 	"github.com/blysin/autocmdr/pkg/config"
 	"github.com/blysin/autocmdr/pkg/prompts"
 	"github.com/blysin/autocmdr/pkg/version"
-	"github.com/sirupsen/logrus"
-	"github.com/tmc/langchaingo/llms/ollama"
-	"github.com/tmc/langchaingo/memory"
 )
 
+// App represents the application.
 type App struct {
 	logger *logrus.Logger
 	cfg    *config.Config
 }
 
+// NewApp creates a new App instance.
 func NewApp() *App {
 	return &App{}
 }
 
+// Args represents the command line arguments.
 type Args struct {
 	Init     bool
 	View     bool
@@ -37,6 +42,7 @@ type Args struct {
 	LogLevel string
 }
 
+// ParseArgs parses command line arguments and returns them as a struct.
 func (a *App) ParseArgs() *Args {
 	var args Args
 	flag.BoolVar(&args.Init, "init", false, "Initialize configuration")

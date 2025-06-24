@@ -22,7 +22,7 @@ type Assistant interface {
 	LoadPrompt() string
 
 	// SetOptions sets chat options
-	SetOptions(options *ChatOptions)
+	SetOptions(options *Options)
 }
 
 // ScriptExecutor defines the interface for script execution

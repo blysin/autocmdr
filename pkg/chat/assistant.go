@@ -13,8 +13,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/blysin/autocmdr/pkg/prompts"
-	"github.com/blysin/autocmdr/pkg/utils"
 	"github.com/chzyer/readline"
 	"github.com/sirupsen/logrus"
 	"github.com/tmc/langchaingo/chains"
@@ -22,18 +20,21 @@ import (
 	"github.com/tmc/langchaingo/outputparser"
 	lcprompts "github.com/tmc/langchaingo/prompts"
 	"github.com/tmc/langchaingo/schema"
+
+	"github.com/blysin/autocmdr/pkg/prompts"
+	"github.com/blysin/autocmdr/pkg/utils"
 )
 
 // CliAssistant implements the Assistant interface for CLI interactions
 type CliAssistant struct {
-	options        *ChatOptions
+	options        *Options
 	promptLoader   *prompts.Loader
 	lastExecResult *ExecutionResult
 	logger         *logrus.Logger
 }
 
 // NewCliAssistant creates a new CLI assistant
-func NewCliAssistant(options *ChatOptions, logger *logrus.Logger) *CliAssistant {
+func NewCliAssistant(options *Options, logger *logrus.Logger) *CliAssistant {
 	if options == nil {
 		options = DefaultChatOptions()
 	}
@@ -68,7 +69,7 @@ func (c *CliAssistant) Run(ctx context.Context, llm llms.Model, chatMemory schem
 	c.printWelcomeInfo()
 
 	for {
-		userInput, shouldContinue := c.handleUserInput(chatMemory, ctx)
+		userInput, shouldContinue := c.handleUserInput(ctx, chatMemory)
 		if !shouldContinue {
 			break
 		}
@@ -90,7 +91,7 @@ func (c *CliAssistant) Run(ctx context.Context, llm llms.Model, chatMemory schem
 			continue
 		}
 
-		c.confirmAndExecute(reader, script, ctx)
+		c.confirmAndExecute(ctx, reader, script)
 	}
 
 	return nil
@@ -101,7 +102,7 @@ func (c *CliAssistant) printWelcomeInfo() {
 }
 
 // ProcessInput processes user input and returns AI response
-func (c *CliAssistant) ProcessInput(ctx context.Context, input string) (*AssistantResult, error) {
+func (c *CliAssistant) ProcessInput(_ context.Context, _ string) (*AssistantResult, error) {
 	// This would be implemented for programmatic use
 	return nil, fmt.Errorf("not implemented")
 }
@@ -150,12 +151,12 @@ func (c *CliAssistant) LoadPrompt() string {
 }
 
 // SetOptions sets chat options
-func (c *CliAssistant) SetOptions(options *ChatOptions) {
+func (c *CliAssistant) SetOptions(options *Options) {
 	c.options = options
 }
 
 // handleUserInput handles user input with readline support
-func (c *CliAssistant) handleUserInput(chatMemory schema.Memory, ctx context.Context) (string, bool) {
+func (c *CliAssistant) handleUserInput(ctx context.Context, chatMemory schema.Memory) (string, bool) {
 	rl, err := readline.New("You: ")
 	if err != nil {
 		_ = err // Ignoring error as we are exiting the program
@@ -208,7 +209,7 @@ func (c *CliAssistant) processAIResponse(ctx context.Context, chain *chains.LLMC
 		userInput = fmt.Sprintf("Last execution result: %s\n%s", c.lastExecResult.Output, userInput)
 	}
 
-	resp, err := chains.Run(ctx, chain, userInput, chains.WithStreamingFunc(func(ctx context.Context, chunk []byte) error {
+	resp, err := chains.Run(ctx, chain, userInput, chains.WithStreamingFunc(func(_ context.Context, chunk []byte) error {
 		if !start {
 			fmt.Print("Bot: ")
 			start = true
@@ -248,7 +249,7 @@ func (c *CliAssistant) parseScript(resp string) (*AssistantResult, error) {
 }
 
 // confirmAndExecute handles script confirmation and execution
-func (c *CliAssistant) confirmAndExecute(reader *bufio.Reader, script *AssistantResult, ctx context.Context) {
+func (c *CliAssistant) confirmAndExecute(ctx context.Context, reader *bufio.Reader, script *AssistantResult) {
 	if !script.Success {
 		fmt.Printf("\nAI did not provide a script: %s\n", script.Script)
 		return

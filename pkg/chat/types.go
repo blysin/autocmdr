@@ -13,16 +13,16 @@ type AssistantResult struct {
 	Script        string `json:"script"`
 }
 
-// ChatOptions contains options for the chat session
-type ChatOptions struct {
+// Options contains options for the chat session
+type Options struct {
 	SystemPrompt   string
 	MemorySize     int
 	StreamResponse bool
 }
 
 // DefaultChatOptions returns default chat options
-func DefaultChatOptions() *ChatOptions {
-	return &ChatOptions{
+func DefaultChatOptions() *Options {
+	return &Options{
 		MemorySize:     10,
 		StreamResponse: true,
 	}
@@ -41,22 +41,10 @@ type ExecutionResult struct {
 	Command  string `json:"command"`
 }
 
-// ChatSession represents a chat session state
-type ChatSession struct {
+// Session represents a chat session state
+type Session struct {
 	ID       string
 	Memory   schema.Memory
-	Options  *ChatOptions
+	Options  *Options
 	LastExec *ExecutionResult
-}
-
-// NewChatSession creates a new chat session
-func NewChatSession(id string, options *ChatOptions) *ChatSession {
-	if options == nil {
-		options = DefaultChatOptions()
-	}
-
-	return &ChatSession{
-		ID:      id,
-		Options: options,
-	}
 }

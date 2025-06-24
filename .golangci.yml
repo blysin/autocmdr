@@ -52,7 +52,7 @@ linters-settings:
 linters:
   enable:
     - bodyclose
-    - deadcode
+    - unused
     - dogsled
     - dupl
     - errcheck
@@ -63,25 +63,19 @@ linters:
     - gocyclo
     - gofmt
     - goimports
-    - golint
-    - gomnd
+    - revive
     - goprintffuncname
     - gosec
     - gosimple
     - ineffassign
-    - interfacer
     - misspell
     - nakedret
     - rowserrcheck
-    - scopelint
     - staticcheck
-    - structcheck
     - stylecheck
     - typecheck
     - unconvert
     - unparam
-    - unused
-    - varcheck
     - whitespace
 
   disable:

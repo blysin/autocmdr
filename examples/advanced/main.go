@@ -58,7 +58,7 @@ func main() {
 	chatMemory := memory.NewConversationWindowBuffer(20)
 
 	// Create custom chat options
-	chatOptions := &chat.ChatOptions{
+	chatOptions := &chat.Options{
 		MemorySize:     20,
 		StreamResponse: true,
 	}
