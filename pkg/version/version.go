@@ -1,3 +1,4 @@
+// Package version manages the application version information and provides version-related utilities.
 package version
 
 import (

@@ -8,10 +8,10 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/blysin/autocmdr/internal/version"
 	"github.com/blysin/autocmdr/pkg/chat"
 	"github.com/blysin/autocmdr/pkg/config"
 	"github.com/blysin/autocmdr/pkg/prompts"
+	"github.com/blysin/autocmdr/pkg/version"
 	"github.com/sirupsen/logrus"
 	"github.com/tmc/langchaingo/llms/ollama"
 	"github.com/tmc/langchaingo/memory"
@@ -52,7 +52,6 @@ func (a *App) ParseArgs() *Args {
 }
 
 func (a *App) parseFlags() bool {
-
 	args := a.ParseArgs()
 
 	return a.handleFlags(args)
@@ -62,7 +61,7 @@ func (a *App) handleFlags(args *Args) (continueChat bool) {
 	continueChat = false
 	if args.Version {
 		a.showVersion()
-		return
+		return continueChat
 	}
 
 	var err error
@@ -80,24 +79,24 @@ func (a *App) handleFlags(args *Args) (continueChat bool) {
 
 	if args.Init {
 		a.handleInit(args.Model, args.Server, args.Token)
-		return
+		return continueChat
 	}
 
 	if args.View {
 		a.showConfig()
-		return
+		return continueChat
 	}
 
 	if args.Prompt {
 		a.showPrompt()
-		return
+		return continueChat
 	}
 
 	if err = a.cfg.Validate(); err != nil {
 		a.logger.WithError(err).Fatal("Invalid configuration")
 	}
 	continueChat = true
-	return
+	return continueChat
 }
 
 func (a *App) showVersion() {

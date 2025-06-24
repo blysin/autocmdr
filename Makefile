@@ -10,9 +10,9 @@ BUILD_DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 GO_VERSION=$(shell go version | cut -d' ' -f3)
 
 # Build flags
-LDFLAGS=-ldflags "-X github.com/blysin/autocmdr/internal/version.Version=$(VERSION) \
-                  -X github.com/blysin/autocmdr/internal/version.GitCommit=$(GIT_COMMIT) \
-                  -X github.com/blysin/autocmdr/internal/version.BuildDate=$(BUILD_DATE)"
+LDFLAGS=-ldflags "-X github.com/blysin/autocmdr/pkg/version.Version=$(VERSION) \
+                  -X github.com/blysin/autocmdr/pkg/version.GitCommit=$(GIT_COMMIT) \
+                  -X github.com/blysin/autocmdr/pkg/version.BuildDate=$(BUILD_DATE)"
 
 # Default target
 .PHONY: all

@@ -1,3 +1,4 @@
+// Package chat implements the core chat assistant functionality including conversation management and response generation.
 package chat
 
 import (
@@ -75,7 +76,7 @@ func (c *CliAssistant) Run(ctx context.Context, llm llms.Model, chatMemory schem
 			continue
 		}
 
-		resp, err := c.processAIResponse(ctx, chain, userInput)
+		resp, err := c.processAIResponse(ctx, &chain, userInput)
 		if err != nil {
 			c.logger.WithError(err).Error("Failed to process AI response")
 			fmt.Printf("Error: %v\n", err)
@@ -89,7 +90,7 @@ func (c *CliAssistant) Run(ctx context.Context, llm llms.Model, chatMemory schem
 			continue
 		}
 
-		c.confirmAndExecute(reader, script, ctx, chatMemory)
+		c.confirmAndExecute(reader, script, ctx)
 	}
 
 	return nil
@@ -199,7 +200,7 @@ func (c *CliAssistant) handleUserInput(chatMemory schema.Memory, ctx context.Con
 }
 
 // processAIResponse processes the AI response with streaming
-func (c *CliAssistant) processAIResponse(ctx context.Context, chain chains.LLMChain, userInput string) (string, error) {
+func (c *CliAssistant) processAIResponse(ctx context.Context, chain *chains.LLMChain, userInput string) (string, error) {
 	start := false
 
 	// Append last execution result if available
@@ -247,7 +248,7 @@ func (c *CliAssistant) parseScript(resp string) (*AssistantResult, error) {
 }
 
 // confirmAndExecute handles script confirmation and execution
-func (c *CliAssistant) confirmAndExecute(reader *bufio.Reader, script *AssistantResult, ctx context.Context, chatMemory schema.Memory) {
+func (c *CliAssistant) confirmAndExecute(reader *bufio.Reader, script *AssistantResult, ctx context.Context) {
 	if !script.Success {
 		fmt.Printf("\nAI did not provide a script: %s\n", script.Script)
 		return

@@ -59,8 +59,16 @@ func TestConfigSaveAndLoad(t *testing.T) {
 	}
 
 	// Set environment variable to use temp directory
-	os.Setenv("LANGCHAIN_CHAT_CONFIG_DIR", tempDir)
-	defer os.Unsetenv("LANGCHAIN_CHAT_CONFIG_DIR")
+	if err := os.Setenv("LANGCHAIN_CHAT_CONFIG_DIR", tempDir); err != nil {
+		t.Fatalf("failed to set LANGCHAIN_CHAT_CONFIG_DIR: %v", err)
+	}
+
+	// 使用匿名函数包装 Unsetenv 以捕获错误
+	defer func() {
+		if err := os.Unsetenv("LANGCHAIN_CHAT_CONFIG_DIR"); err != nil {
+			t.Errorf("failed to unset LANGCHAIN_CHAT_CONFIG_DIR: %v", err)
+		}
+	}()
 
 	// Load config
 	loadedCfg, err := Load()

@@ -1,3 +1,4 @@
+// Package prompts provides functionality for loading and managing prompt templates.
 package prompts
 
 import (

@@ -16,62 +16,26 @@ linters-settings:
   errcheck:
     check-type-assertions: true
     check-blank: true
-  
-  govet:
-    check-shadowing: true
-    enable-all: true
-  
+
   gocyclo:
     min-complexity: 15
-  
+
   maligned:
     suggest-new: true
-  
+
   dupl:
     threshold: 100
-  
+
   goconst:
     min-len: 3
     min-occurrences: 3
-  
+
   misspell:
     locale: US
-  
-  lll:
-    line-length: 120
-  
+
   goimports:
     local-prefixes: github.com/blysin/autocmdr
-  
-  depguard:
-    list-type: whitelist
-    include-go-root: true
-    packages:
-      - github.com/blysin/autocmdr/internal/version
-      - github.com/blysin/autocmdr/pkg/chat
-      - github.com/blysin/autocmdr/pkg/config
-      - github.com/blysin/autocmdr/pkg/prompts
-      - github.com/blysin/autocmdr/pkg/utils
-      - github.com/chzyer/readline
-      - github.com/sirupsen/logrus
-      - github.com/tmc/langchaingo/chains
-      - github.com/tmc/langchaingo/llms
-      - github.com/tmc/langchaingo/llms/ollama
-      - github.com/tmc/langchaingo/memory
-      - github.com/tmc/langchaingo/outputparser
-      - github.com/tmc/langchaingo/prompts
-      - github.com/tmc/langchaingo/schema
-      - bufio
-      - context
-      - encoding/json
-      - errors
-      - fmt
-      - os
-      - os/exec
-      - runtime
-      - strings
-      - time
-  
+
   gocritic:
     enabled-tags:
       - performance
@@ -80,7 +44,7 @@ linters-settings:
     disabled-checks:
       - wrapperFunc
       - dupImport
-  
+
   funlen:
     lines: 100
     statements: 50
@@ -89,7 +53,6 @@ linters:
   enable:
     - bodyclose
     - deadcode
-    - depguard
     - dogsled
     - dupl
     - errcheck
@@ -105,10 +68,8 @@ linters:
     - goprintffuncname
     - gosec
     - gosimple
-    - govet
     - ineffassign
     - interfacer
-    - lll
     - misspell
     - nakedret
     - rowserrcheck
@@ -122,7 +83,7 @@ linters:
     - unused
     - varcheck
     - whitespace
-  
+
   disable:
     - maligned
     - prealloc
@@ -134,19 +95,19 @@ issues:
         - gomnd
         - funlen
         - goconst
-    
+
     - path: cmd/
       linters:
         - gochecknoinits
-    
+
     - text: "weak cryptographic primitive"
       linters:
         - gosec
-    
+
     - text: "should have a package comment"
       linters:
         - golint
-  
+
   exclude-use-default: false
   max-issues-per-linter: 0
   max-same-issues: 0

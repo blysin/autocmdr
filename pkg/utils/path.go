@@ -30,7 +30,7 @@ func GetUserConfigDir(appName string) (string, error) {
 // EnsureDir creates a directory if it doesn't exist
 func EnsureDir(dir string) error {
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		if err := os.MkdirAll(dir, 0750); err != nil {
+		if err := os.MkdirAll(dir, 0o750); err != nil {
 			return fmt.Errorf("failed to create directory %s: %w", dir, err)
 		}
 	}

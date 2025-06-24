@@ -1,3 +1,4 @@
+// Package utils provides common utility functions including JSON manipulation and path handling.
 package utils
 
 import (

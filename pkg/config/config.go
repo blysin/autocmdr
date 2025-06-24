@@ -74,7 +74,7 @@ func Load() (*Config, error) {
 	}
 
 	// Ensure config directory exists
-	if err := os.MkdirAll(cfg.ConfigDir, 0750); err != nil {
+	if err := os.MkdirAll(cfg.ConfigDir, 0o750); err != nil {
 		return nil, fmt.Errorf("failed to create config directory: %w", err)
 	}
 
@@ -86,7 +86,7 @@ func (c *Config) Save() error {
 	configPath := filepath.Join(c.ConfigDir, "config.json")
 
 	// Ensure config directory exists
-	if err := os.MkdirAll(c.ConfigDir, 0750); err != nil {
+	if err := os.MkdirAll(c.ConfigDir, 0o750); err != nil {
 		return fmt.Errorf("failed to create config directory: %w", err)
 	}
 
