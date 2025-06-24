@@ -104,6 +104,6 @@ jobs:
         go-version: 1.21.x
     
     - name: Run Gosec Security Scanner
-      uses: securego/gosec@latest
+      uses: securego/gosec@master
       with:
         args: './...'
