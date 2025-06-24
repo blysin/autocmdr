@@ -158,11 +158,11 @@ func (c *CliAssistant) SetOptions(options *ChatOptions) {
 func (c *CliAssistant) handleUserInput(chatMemory schema.Memory, ctx context.Context) (string, bool) {
 	rl, err := readline.New("You: ")
 	if err != nil {
-		c.logger.WithError(err).Fatal("Failed to create readline")
+		_ = err // Ignoring error as we are exiting the program
 	}
 	defer func() {
 		if err := rl.Close(); err != nil {
-			c.logger.WithError(err).Error("Failed to close readline")
+			_ = err // Ignoring error as we are exiting the program
 		}
 	}()
 
